@@ -1,6 +1,9 @@
 import ru.sber.filesystem.VFilesystem
+import ru.sber.filesystem.VPath
 import java.io.IOException
+import java.io.PrintWriter
 import java.net.ServerSocket
+import java.net.Socket
 
 /**
  * A basic and very limited implementation of a file server that responds to GET
@@ -27,44 +30,30 @@ class FileServer {
          * ServerSocket object.
          */
         while (true) {
+            val s = socket.accept()
 
-            // TODO Delete this once you start working on your solution.
-            //throw new UnsupportedOperationException();
+            val request = s.getInputStream().bufferedReader().readLine()
+            val writer = PrintWriter(s.getOutputStream())
 
-            // TODO 1) Use socket.accept to get a Socket object
+            if (request.subSequence(0, 3) == "GET") {
+                val path = request.split(" ")[1]
+                val file = fs.readFile(VPath(path))
+
+                if (file == null) {
+                    writer.write("HTTP/1.0 404 Not Found\r\n" +
+                                "Server: FileServer\r\n" +
+                                "\r\n")
+
+                } else {
+                    writer.write("HTTP/1.0 200 OK\r\n" +
+                            "Server: FileServer\r\n" +
+                            "\r\n" +
+                            "$file\r\n")
 
 
-            /*
-            * TODO 2) Using Socket.getInputStream(), parse the received HTTP
-            * packet. In particular, we are interested in confirming this
-            * message is a GET and parsing out the path to the file we are
-            * GETing. Recall that for GET HTTP packets, the first line of the
-            * received packet will look something like:
-            *
-            *     GET /path/to/file HTTP/1.1
-            */
-
-
-            /*
-             * TODO 3) Using the parsed path to the target file, construct an
-             * HTTP reply and write it to Socket.getOutputStream(). If the file
-             * exists, the HTTP reply should be formatted as follows:
-             *
-             *   HTTP/1.0 200 OK\r\n
-             *   Server: FileServer\r\n
-             *   \r\n
-             *   FILE CONTENTS HERE\r\n
-             *
-             * If the specified file does not exist, you should return a reply
-             * with an error code 404 Not Found. This reply should be formatted
-             * as:
-             *
-             *   HTTP/1.0 404 Not Found\r\n
-             *   Server: FileServer\r\n
-             *   \r\n
-             *
-             * Don't forget to close the output stream.
-             */
+                }
+            }
+            writer.close()
         }
     }
 }
